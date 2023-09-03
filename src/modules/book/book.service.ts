@@ -1,26 +1,67 @@
 import { Injectable } from '@nestjs/common';
-import { CreateBookDto } from './dto/create-book.dto';
-import { UpdateBookDto } from './dto/update-book.dto';
+import { BookDTO } from './book.dto';
+import { PrismaService } from 'src/database/PrismaService';
 
 @Injectable()
 export class BookService {
-  create(createBookDto: CreateBookDto) {
-    return 'This action adds a new book';
+  constructor(private prisma: PrismaService) {}
+
+  async create(data: BookDTO) {
+    const bookExists = await this.prisma.book.findFirst({
+      where: {
+        bar_code: data.bar_code,
+      },
+    });
+
+    if (bookExists) {
+      throw new Error('Book already exists');
+    }
+
+    const book = await this.prisma.book.create({
+      data,
+    });
+
+    return book;
   }
 
-  findAll() {
-    return `This action returns all book`;
+  async findAll() {
+    return this.prisma.book.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} book`;
+  async update(id: string, data: BookDTO) {
+    const bookExistis = await this.prisma.book.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!bookExistis) {
+      throw new Error('Book does not exists');
+    }
+
+    return await this.prisma.book.update({
+      data,
+      where: {
+        id,
+      },
+    });
   }
 
-  update(id: number, updateBookDto: UpdateBookDto) {
-    return `This action updates a #${id} book`;
-  }
+  async delete(id: string) {
+    const bookExistis = await this.prisma.book.findUnique({
+      where: {
+        id,
+      },
+    });
 
-  remove(id: number) {
-    return `This action removes a #${id} book`;
+    if (!bookExistis) {
+      throw new Error('Book does not exists');
+    }
+
+    return await this.prisma.book.delete({
+      where: {
+        id,
+      },
+    });
   }
 }
